@@ -11,7 +11,6 @@ from bs4 import BeautifulSoup, Tag
 from markdownify import markdownify as md
 from countdown import countdown
 from requests import get, post
-import urllib3
 
 AUTH_COOKIE = ""
 
@@ -133,7 +132,7 @@ def download():
         Thread(target=download_year, args=(y,)).start()
 
 
-def events():
+def download_events():
     """Download the events page."""
     with open(f"{directory}/README.md", "w", encoding="utf-8") as file:
         html = get(
@@ -142,10 +141,10 @@ def events():
             cookies={"session": AUTH_COOKIE},
         ).text
         soup = BeautifulSoup(html, "html.parser")
-        event = soup.find_all("div", {"class": "eventlist-event"})
+        events = soup.find_all("div", {"class": "eventlist-event"})
         file.write(
             "# Advent of Code Events\n\n"
-            + "\n".join([f"- [{e.text}]({e.text[1:5]})" for e in event])
+            + "\n".join([f"- [{e.text}]({e.text[1:5]})" for e in events])
             + "\n"
         )
 
@@ -181,10 +180,20 @@ def accept_answer(y: int, d: int, level: int):
         text = article.text
         if "That's the right answer" in text:
             print("Correct!")
+            download_calendar(y)
+            download_events()
+            system(f"glow {directory}/{y}/README.md")
+            if input("Commit (y/N): ").lower() == "y":
+                system(
+                    f"git add {directory}/{y}/{str(d).zfill(2)}.* {directory}/{y}/README.md {directory}/README.md"
+                )
+                system(f'git commit -m "{y}/{str(d).zfill(2)}"')
+                system("git push")
             if level == 1:
                 if "[Continue to Part Two]" in text:
-                    view(y, d, 2)
-                    accept_answer(y, d, 2)
+                    if input("Continue to part two (y/N): ").lower() == "y":
+                        view(y, d, 2)
+                        accept_answer(y, d, 2)
             return
         elif "That's not the right answer" in text:
             print("Incorrect!")
@@ -194,14 +203,14 @@ def accept_answer(y: int, d: int, level: int):
                 print("Too high.")
             if (m := search(r"((\d+)m )?(\d+)s", text)) is not None:
                 print(f"Wait {m.group(0)} before trying again.")
-                countdown(mins=int(m.group(1) or 0), secs=int(m.group(3)))
+                countdown(mins=int(m.group(2) or 0), secs=int(m.group(3)))
             else:
                 print("Wait a minute before trying again.")
                 countdown(mins=1, secs=0)
         elif "You gave an answer too recently" in text:
             if (m := search(r"((\d+)m )?(\d+)s", text)) is not None:
                 print(f"Wait {m.group(0)} before trying again.")
-                countdown(mins=int(m.group(1) or 0), secs=int(m.group(3)))
+                countdown(mins=int(m.group(2) or 0), secs=int(m.group(3)))
             else:
                 print("Wait a minute before trying again.")
                 countdown(mins=1, secs=0)
@@ -212,7 +221,7 @@ def accept_answer(y: int, d: int, level: int):
 
 
 def main():
-    events()
+    download_events()
     today = date.today()
     if len(argv) == 1:
         print("DO NOT RUN THIS MORE THAN ONCE!")
@@ -242,6 +251,28 @@ def main():
             accept_answer(today.year, today.day, 2)
         else:
             accept_answer(today.year, today.day, 1)
+    elif len(argv) == 3 and argv[1] == "next" and argv[2] == "answer":
+        # find the earliest uncompleted day
+        for y in range(2015, 2025):
+            for d in range(1, 26):
+                if y > today.year or (y == today.year and d >= today.day):
+                    break
+                with open(
+                    f"{directory}/{y}/{str(d).zfill(2)}.a.py", encoding="utf-8"
+                ) as file:
+                    if len(file.readlines()) <= 5:
+                        question = view(y, d)
+                        accept_answer(y, d, 1)
+                        if input("Continue (y/N): ").lower() != "y":
+                            sys_exit(0)
+                with open(
+                    f"{directory}/{y}/{str(d).zfill(2)}.b.py", encoding="utf-8"
+                ) as file:
+                    if len(file.readlines()) <= 5:
+                        question = view(y, d)
+                        accept_answer(y, d, 2)
+                        if input("Continue (y/N): ").lower() != "y":
+                            sys_exit(0)
     elif len(argv) == 3:
         download_day(int(argv[1]), int(argv[2]))
     elif len(argv) == 4 and argv[3] == "view":
@@ -265,7 +296,8 @@ def main():
                 if d == 26:
                     y += 1
                     d = 1
-                break
+                continue
+            break
     else:
         print("Usage: python questions.py [year] [day]")
         sys_exit(1)
