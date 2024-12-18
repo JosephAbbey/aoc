@@ -184,10 +184,11 @@ def accept_answer(y: int, d: int, level: int):
             download_events()
             system(f"glow {directory}/{y}/README.md")
             if input("Commit (y/N): ").lower() == "y":
+                download_day(y, d)
                 system(
                     f"git add {directory}/{y}/{str(d).zfill(2)}.* {directory}/{y}/README.md {directory}/README.md"
                 )
-                system(f'git commit -m "{y}/{str(d).zfill(2)}"')
+                system(f'git commit -m "{y}/{str(d).zfill(2)} Part {level}"')
                 system("git push")
             if level == 1:
                 if "[Continue to Part Two]" in text:
