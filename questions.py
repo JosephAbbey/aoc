@@ -202,7 +202,10 @@ def accept_answer(y: int, d: int, level: int):
                 print("Too low.")
             elif "too high" in text:
                 print("Too high.")
-            if (m := search(r"((\d+)m )?(\d+)s", text)) is not None:
+            if "10 minutes" in text:
+                print("Wait 10 minutes before trying again.")
+                countdown(mins=10, secs=0)
+            elif (m := search(r"((\d+)m )?(\d+)s", text)) is not None:
                 print(f"Wait {m.group(0)} before trying again.")
                 countdown(mins=int(m.group(2) or 0), secs=int(m.group(3)))
             else:
