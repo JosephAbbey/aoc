@@ -61,14 +61,14 @@ for y, line in enumerate(lines):
     for x, char in enumerate(line):
         if char == "#":
             if 0 < x < len(line) - 1 and line[x - 1] == "." and line[x + 1] == ".":
-                if 100 < abs(distances[(x - 1, y)] - distances[(x + 1, y)]):
+                if 101 < abs(distances[(x - 1, y)] - distances[(x + 1, y)]):
                     total += 1
             if (
                 0 < y < len(lines) - 1
                 and lines[y - 1][x] == "."
                 and lines[y + 1][x] == "."
             ):
-                if 100 < abs(distances[(x, y - 1)] - distances[(x, y + 1)]):
+                if 101 < abs(distances[(x, y - 1)] - distances[(x, y + 1)]):
                     total += 1
 
 print(total)
