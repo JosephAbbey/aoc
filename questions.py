@@ -16,9 +16,25 @@ AUTH_COOKIE = ""
 
 directory = dirname(__file__)
 
+today = date.today()
+
+most_recent_year = today.year if today.month == 12 else today.year - 1
+most_recent_day = today.day if today.month == 12 and today.day <= 25 else 25
+
 
 def download_day(y: int, d: int):
     """Download the question and input for a given day."""
+    if not exists(f"{directory}/{y}"):
+        mkdir(f"{directory}/{y}")
+
+    if (
+        y < 2015
+        or y > most_recent_year
+        or (y == most_recent_year and d > most_recent_day)
+    ):
+        print("That day is not yet available.")
+        sys_exit(1)
+
     fd = str(d).zfill(2)
     print(f"Downloading {y}/{fd}")
     with open(f"{directory}/{y}/{fd}.input.txt", "w", encoding="utf-8") as file:
@@ -73,60 +89,66 @@ def download_day(y: int, d: int):
 
 def download_calendar(y: int):
     """Download the calendar (progress) for a year."""
-    with open(f"{directory}/{y}/README.md", "w", encoding="utf-8") as file:
-        req = get(
-            f"https://adventofcode.com/{y}",
-            timeout=10,
-            cookies={"session": AUTH_COOKIE},
-        )
-        req.encoding = req.apparent_encoding
-        html = req.text
-        soup = BeautifulSoup(html, "html.parser")
-        calendar = soup.find("pre", {"class": "calendar"})
-        for span in calendar.find_all("span"):
-            if span.has_attr("style") and "absolute" in span["style"]:
-                span.decompose()
-        if calendar is None:
-            print("Unknown error.")
-            print(html)
-            sys_exit(1)
-        content = ""
-        for element in calendar.children:
-            if isinstance(element, Tag):
-                if element.name == "a":
-                    lines = element.text.splitlines()
-                    for line in lines[:-1]:
-                        content += f"    {line}\n"
-                    if "calendar-complete" in element["class"]:
-                        content += f"*   {lines[-1][:-3]}\n"
-                    elif "calendar-verycomplete" in element["class"]:
-                        content += f"* * {lines[-1][:-3]}\n"
-                    else:
-                        content += f"    {lines[-1][:-3]}\n"
-                elif element.name == "span":
-                    content += (
-                        "\n".join(["    " + line for line in element.text.splitlines()])
-                        + "\n"
-                    )
-            else:
-                if element.text.strip() != "":
-                    content += (
-                        "\n".join(["    " + line for line in element.text.splitlines()])
-                        + "\n"
-                    )
-        file.write(f"# Advent of Code {y}\n\n```plaintext\n" + content + "```\n")
+    if 2015 <= y <= most_recent_year:
+        with open(f"{directory}/{y}/README.md", "w", encoding="utf-8") as file:
+            req = get(
+                f"https://adventofcode.com/{y}",
+                timeout=10,
+                cookies={"session": AUTH_COOKIE},
+            )
+            req.encoding = req.apparent_encoding
+            html = req.text
+            soup = BeautifulSoup(html, "html.parser")
+            calendar = soup.find("pre", {"class": "calendar"})
+            for span in calendar.find_all("span"):
+                if span.has_attr("style") and "absolute" in span["style"]:
+                    span.decompose()
+            if calendar is None:
+                print("Unknown error.")
+                print(html)
+                sys_exit(1)
+            content = ""
+            for element in calendar.children:
+                if isinstance(element, Tag):
+                    if element.name == "a":
+                        lines = element.text.splitlines()
+                        for line in lines[:-1]:
+                            content += f"    {line}\n"
+                        if "calendar-complete" in element["class"]:
+                            content += f"*   {lines[-1][:-3]}\n"
+                        elif "calendar-verycomplete" in element["class"]:
+                            content += f"* * {lines[-1][:-3]}\n"
+                        else:
+                            content += f"    {lines[-1][:-3]}\n"
+                    elif element.name == "span":
+                        content += (
+                            "\n".join(
+                                ["    " + line for line in element.text.splitlines()]
+                            )
+                            + "\n"
+                        )
+                else:
+                    if element.text.strip() != "":
+                        content += (
+                            "\n".join(
+                                ["    " + line for line in element.text.splitlines()]
+                            )
+                            + "\n"
+                        )
+            file.write(f"# Advent of Code {y}\n\n```plaintext\n" + content + "```\n")
 
 
 def download_year(y: int):
     """Download all the questions and inputs for a given year."""
-    download_calendar(y)
-    for d in range(1, 26):
-        download_day(y, d)
+    if 2015 <= y <= most_recent_year:
+        download_calendar(y)
+        for d in range(1, 26 if y < most_recent_year else (most_recent_day + 1)):
+            download_day(y, d)
 
 
 def download():
     """Download all the questions and inputs for Advent of Code."""
-    for y in range(2015, 2025):
+    for y in range(2015, most_recent_year + 1):
         if not exists(f"{directory}/{y}"):
             mkdir(f"{directory}/{y}")
         Thread(target=download_year, args=(y,)).start()
@@ -226,12 +248,11 @@ def accept_answer(y: int, d: int, level: int):
 
 def main():
     download_events()
-    today = date.today()
     if len(argv) == 1:
         print("DO NOT RUN THIS MORE THAN ONCE!")
         download()
     elif len(argv) == 2 and argv[1] == "calendars":
-        for y in range(2015, 2025):
+        for y in range(2015, most_recent_year + 1):
             download_calendar(y)
     elif len(argv) == 2:
         download_year(int(argv[1]))
@@ -257,10 +278,8 @@ def main():
             accept_answer(today.year, today.day, 1)
     elif len(argv) == 3 and argv[1] == "next" and argv[2] == "answer":
         # find the earliest uncompleted day
-        for y in range(2015, 2025):
-            for d in range(1, 26):
-                if y > today.year or (y == today.year and d >= today.day):
-                    break
+        for y in range(2015, most_recent_year + 1):
+            for d in range(1, 26 if y < most_recent_year else (most_recent_day + 1)):
                 with open(
                     f"{directory}/{y}/{str(d).zfill(2)}.a.py", encoding="utf-8"
                 ) as file:
@@ -284,7 +303,7 @@ def main():
         view(y, d)
     elif len(argv) == 4 and argv[3] == "answer":
         y, d = int(argv[1]), int(argv[2])
-        if y > today.year or (y == today.year and d >= today.day):
+        if y > most_recent_year or (y == most_recent_year and d > most_recent_day):
             print("That day is not yet available.")
             sys_exit(1)
         while True:
@@ -293,7 +312,7 @@ def main():
                 accept_answer(y, d, 2)
             else:
                 accept_answer(y, d, 1)
-            if y > today.year or (y == today.year and d >= today.day):
+            if y > most_recent_year or (y == most_recent_year and d > most_recent_day):
                 sys_exit(0)
             if input("Continue (y/N): ").lower() == "y":
                 d += 1
