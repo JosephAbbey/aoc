@@ -24,7 +24,7 @@ def next_secret(a: int) -> int:
 
 
 def next_2000(a: int) -> int:
-    for i in range(2000):
+    for _ in range(2000):
         a = next_secret(a)
     return a
 
