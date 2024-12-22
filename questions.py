@@ -12,7 +12,7 @@ from markdownify import markdownify as md
 from countdown import countdown
 from requests import get, post
 
-AUTH_COOKIE = ""
+AUTH_COOKIE = "53616c7465645f5f4dc25cac8121e993a9108ebde8e5b8007e3d54a90e53493dbca52f126bfcdcf016f2a6f2731dbdcad0f7fc85e2d616ff47e54328d7b022e6"
 
 directory = dirname(__file__)
 
@@ -55,36 +55,47 @@ def download_day(y: int, d: int):
             file.write(
                 f'with open("{y}/{fd}.input.txt", encoding="utf-8") as file:\n    data = file.read()\n\n'
             )
-    with open(f"{directory}/{y}/{fd}.md", "w", encoding="utf-8") as file:
-        html = get(
-            f"https://adventofcode.com/{y}/day/{d}",
-            timeout=10,
-            cookies={"session": AUTH_COOKIE},
-        ).text
-        soup = BeautifulSoup(html, "html.parser")
-        articles = soup.find_all("article")
-        question = (
-            "#"
+    html = get(
+        f"https://adventofcode.com/{y}/day/{d}",
+        timeout=10,
+        cookies={"session": AUTH_COOKIE},
+    ).text
+    soup = BeautifulSoup(html, "html.parser")
+    articles = soup.find_all("article")
+    question = (
+        "#"
+        + sub(
+            r"\/(\d{4})\/day\/(\d+)",
+            lambda m: f"../{str(m.group(1))}/{str(int(m.group(2))).zfill(2)}.md",
+            md(str(articles[0]))[5:].replace(" ---", "\n## Part 1"),
+        )
+        + "\n\n"
+        + (
+            "##"
             + sub(
                 r"\/(\d{4})\/day\/(\d+)",
                 lambda m: f"../{str(m.group(1))}/{str(int(m.group(2))).zfill(2)}.md",
-                md(str(articles[0]))[5:].replace(" ---", "\n## Part 1"),
+                md(str(articles[1]))[5:].replace(" ---", ""),
             )
-            + "\n\n"
-            + (
-                "##"
-                + sub(
-                    r"\/(\d{4})\/day\/(\d+)",
-                    lambda m: f"../{str(m.group(1))}/{str(int(m.group(2))).zfill(2)}.md",
-                    md(str(articles[1]))[5:].replace(" ---", ""),
-                )
-                if len(articles) > 1
-                else "Complete for part 2."
-            )
-            + f"\n\nhttps://adventofcode.com/{y}/day/{d}\n\n"
+            if len(articles) > 1
+            else "Complete for part 2."
         )
+        + f"\n\nhttps://adventofcode.com/{y}/day/{d}\n\n"
+    )
+    with open(f"{directory}/{y}/{fd}.md", "w", encoding="utf-8") as file:
         file.write(question)
-        return question
+    answer1 = articles[0].find_next_sibling("p").code
+    if answer1 is not None:
+        with open(f"{directory}/{y}/{fd}.a.answer.txt", "a", encoding="utf-8") as file:
+            file.write(answer1.text)
+    if len(articles) > 1:
+        answer2 = articles[1].find_next_sibling("p").code
+        if answer2 is not None:
+            with open(
+                f"{directory}/{y}/{fd}.b.answer.txt", "a", encoding="utf-8"
+            ) as file:
+                file.write(answer2.text)
+    return question
 
 
 def download_calendar(y: int):
