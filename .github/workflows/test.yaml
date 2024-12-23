@@ -29,15 +29,14 @@ jobs:
         uses: tj-actions/changed-files@v39
         with:
           files: |
-            **/*.py
-            !questions.py
-            !**/test_*.py
+            **/*.a.py
+            **/*.b.py
 
       - name: Test solutions
+        if: steps.changed-files.outputs.any_changed == 'true'
         run: |
           python test_solutions.py ${{ steps.changed-files.outputs.all_changed_files }}
 
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Generated Timesheet"
-          file_pattern: "timesheet.*"
