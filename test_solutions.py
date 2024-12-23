@@ -79,7 +79,7 @@ def test_solution(file_path: Path) -> TestResult | None:
 
 
 def main():
-    if len(sys.argv) > 2:
+    if len(sys.argv) > 1:
         changed_files = [Path(file) for file in sys.argv[1:]]
     else:
         changed_files = list(Path(".").rglob("*.py"))
