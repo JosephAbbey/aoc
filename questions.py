@@ -86,13 +86,13 @@ def download_day(y: int, d: int):
         file.write(question)
     answer1 = articles[0].find_next_sibling("p").code
     if answer1 is not None:
-        with open(f"{directory}/{y}/{fd}.a.answer.txt", "a", encoding="utf-8") as file:
+        with open(f"{directory}/{y}/{fd}.a.answer.txt", "w", encoding="utf-8") as file:
             file.write(answer1.text)
     if len(articles) > 1:
         answer2 = articles[1].find_next_sibling("p").code
         if answer2 is not None:
             with open(
-                f"{directory}/{y}/{fd}.b.answer.txt", "a", encoding="utf-8"
+                f"{directory}/{y}/{fd}.b.answer.txt", "w", encoding="utf-8"
             ) as file:
                 file.write(answer2.text)
     return question

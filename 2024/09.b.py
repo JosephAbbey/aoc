@@ -47,12 +47,12 @@ for id in reversed(range(len(blocks))):
 total = 0.0
 pos = 0
 for block, e in zip(blocks, empty):
-    print(str(block[1]) * block[0], end="")
-    print("." * e, end="")
+    # print(str(block[1]) * block[0], end="")
+    # print("." * e, end="")
     for i in range(block[0]):
         total += pos * block[1]
         pos += 1
     pos += e
 
-print()
+# print()
 print(int(total))

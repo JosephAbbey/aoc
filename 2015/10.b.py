@@ -5,7 +5,7 @@ with open("2015/10.input.txt", encoding="utf-8") as file:
 
 sequence = list(data.strip())
 for i in range(50):
-    print(i, len(sequence))
+    # print(i, len(sequence))
     new_sequence = []
     i = 0
     while i < len(sequence):
