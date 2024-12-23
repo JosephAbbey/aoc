@@ -3,9 +3,8 @@ name: Test Solutions
 on:
   push:
     paths:
-      - '*/**.py'
-      - '!questions.py'
-      - '!**/test_*.py'
+      - '*/**.a.py'
+      - '*/**.b.py'
 
 jobs:
   test-solution:

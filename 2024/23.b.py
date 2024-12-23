@@ -43,6 +43,7 @@ def find_group(group: set[str], nodes: set[str], exclude: set[str]):
 
 find_group(set(), set(connections_map.keys()), set())
 
+
 print(",".join(sorted(party)))
 
 
