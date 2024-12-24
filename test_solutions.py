@@ -40,6 +40,9 @@ def test_solution(file_path: Path) -> TestResult | None:
 
     with open(file_path, encoding="utf-8") as f:
         code = f.read()
+        if code.startswith("# REQUIRES HUMAN"):
+            print(f"Skipping {file_path} as it requires human intervention")
+            return None
         if code.count("print") == 0:
             print(f"No print statement found in {file_path}")
             return None
