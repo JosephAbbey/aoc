@@ -1,22 +1,19 @@
 name: Test Solutions
 
 on:
-  push:
-    paths:
-      - '*/**.a.py'
-      - '*/**.b.py'
+  workflow_dispatch:
 
 jobs:
   test-solution:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
