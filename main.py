@@ -182,7 +182,7 @@ def download_events():
         events = soup.find_all("div", {"class": "eventlist-event"})
         file.write(
             "# Advent of Code Events\n\n"
-            + "\n".join([f"- " + md(str(e)).replace('"/"', f'"/{most_recent_year}"') for e in events])
+            + "\n".join([f"- " + md(str(e)).replace('(/)', f'(/{most_recent_year})') for e in events])
             + "\n"
         )
 
