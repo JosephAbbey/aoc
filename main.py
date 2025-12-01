@@ -1,7 +1,7 @@
 """Download the questions and inputs for Advent of Code."""
 
 from datetime import date
-from os import mkdir, system
+from os import mkdir, system, getenv
 from os.path import exists, dirname
 from re import sub, search
 from threading import Thread
@@ -11,8 +11,9 @@ from bs4 import BeautifulSoup, Tag
 from markdownify import markdownify as md
 from countdown import countdown
 from requests import get, post
+from dotenv import load_dotenv
 
-AUTH_COOKIE = "53616c7465645f5f4dc25cac8121e993a9108ebde8e5b8007e3d54a90e53493dbca52f126bfcdcf016f2a6f2731dbdcad0f7fc85e2d616ff47e54328d7b022e6"
+load_dotenv()
 
 directory = dirname(__file__)
 
@@ -21,6 +22,8 @@ today = date.today()
 most_recent_year = today.year if today.month == 12 else today.year - 1
 most_recent_day = today.day if today.month == 12 and today.day <= 25 else 25
 
+AUTH_COOKIE = getenv("AUTH_COOKIE")
+assert AUTH_COOKIE is not None, "AUTH_COOKIE environment variable not set."
 
 def download_day(y: int, d: int):
     """Download the question and input for a given day."""
@@ -31,6 +34,8 @@ def download_day(y: int, d: int):
         y < 2015
         or y > most_recent_year
         or (y == most_recent_year and d > most_recent_day)
+        or (y < 2025 and (d < 1 or d > 25))
+        or (y >= 2025 and (d < 1 or d > 12))
     ):
         print("That day is not yet available.")
         sys_exit(1)
@@ -67,7 +72,7 @@ def download_day(y: int, d: int):
         + sub(
             r"\/(\d{4})\/day\/(\d+)",
             lambda m: f"../{str(m.group(1))}/{str(int(m.group(2))).zfill(2)}.md",
-            md(str(articles[0]))[5:].replace(" ---", "\n## Part 1"),
+            md(str(articles[0]))[3:].replace(" ---", "\n## Part 1"),
         )
         + "\n\n"
         + (
@@ -75,7 +80,7 @@ def download_day(y: int, d: int):
             + sub(
                 r"\/(\d{4})\/day\/(\d+)",
                 lambda m: f"../{str(m.group(1))}/{str(int(m.group(2))).zfill(2)}.md",
-                md(str(articles[1]))[5:].replace(" ---", ""),
+                md(str(articles[1]))[3:].replace(" ---", ""),
             )
             if len(articles) > 1
             else "Complete for part 2."
@@ -153,7 +158,7 @@ def download_year(y: int):
     """Download all the questions and inputs for a given year."""
     if 2015 <= y <= most_recent_year:
         download_calendar(y)
-        for d in range(1, 26 if y < most_recent_year else (most_recent_day + 1)):
+        for d in range(1, min(most_recent_day if y == most_recent_year else 25, 12 if y >= 2025 else 25) + 1):
             download_day(y, d)
 
 
@@ -177,7 +182,7 @@ def download_events():
         events = soup.find_all("div", {"class": "eventlist-event"})
         file.write(
             "# Advent of Code Events\n\n"
-            + "\n".join([f"- [{e.text}]({e.text[1:5]})" for e in events])
+            + "\n".join([f"- " + md(str(e)).replace('"/"', f'"/{most_recent_year}"') for e in events])
             + "\n"
         )
 
@@ -271,7 +276,7 @@ def main():
         if today.month != 12:
             print("Advent of Code is only in December.")
             sys_exit(1)
-        if today.day > 25:
+        if today.day > 12:
             print("Advent of Code is over.")
             sys_exit(1)
         view(today.year, today.day)
@@ -279,7 +284,7 @@ def main():
         if today.month != 12:
             print("Advent of Code is only in December.")
             sys_exit(1)
-        if today.day > 25:
+        if today.day > 12:
             print("Advent of Code is over.")
             sys_exit(1)
         question = view(today.year, today.day)
@@ -333,7 +338,7 @@ def main():
                 continue
             break
     else:
-        print("Usage: python questions.py [year] [day]")
+        print("Usage: python main.py [year] [day]")
         sys_exit(1)
 
 
